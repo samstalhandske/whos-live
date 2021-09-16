@@ -14,6 +14,7 @@ var limit = 100;
 var liveStreams = [];
 
 var userID = 0;
+var userDisplayName = "";
 
 var currentDate = new Date();
 
@@ -41,13 +42,17 @@ async function getUser(username)
             if(data._total > 0)
             {
                 userID = data.users[0]._id;
+                userDisplayName = data.users[0].display_name;
 
                 tips.firstChild.data = "User found! Loading..."; 
+
+                document.title = userDisplayName + " - Streamhub";
 
                 getFollowedStreams(userID);
             }
             else
             {
+                document.title = "Streamhub";
                 tips.firstChild.data = "No user found with that name..."; 
             }
         });
@@ -77,10 +82,11 @@ async function getLivestreams(data)
     data.follows.forEach(element => {
         getLivestream(element.channel._id).then(function(result)
         {
+            console.log(result);
+
             if(result.stream)
             {
                 liveStreams.push(result.stream);
-                anyLeft = true;
             }
             count++;
             
@@ -100,6 +106,12 @@ async function getLivestreams(data)
             }
         });
     });
+
+    if(data.follows.length === 0)
+    {
+        twitchSearch.value = "";
+        tips.firstChild.data = "User " + userDisplayName + "  doesn't follow anyone!"; 
+    }
 }
 function getLivestream(id)
 {
@@ -129,6 +141,20 @@ function createCardForStream(stream)
     var minutes = Math.floor((diff % 3.6e6) / 6e4);
     var seconds = Math.floor((diff % 6e4) / 1000);
 
+    var timeString = "";
+    if(hours > 0)
+    {
+        timeString += hours + "h ";
+    }
+    if(minutes > 0)
+    {
+        timeString += minutes + "m ";
+    }
+    if(seconds > 0)
+    {
+        timeString += seconds + "s";
+    }
+
     cardEl.innerHTML =
     `
         <div class="img-container">
@@ -137,7 +163,7 @@ function createCardForStream(stream)
         <div class="item-info-container">
             <p id="title">${stream.channel.display_name} <i class="fab fa-twitch"></i></p>
             <p id="status">${stream.channel.game}</p>
-            <p><i class="fas fa-user"></i> ${stream.viewers} <i class="fas fa-clock"></i> ${hours}:${minutes}:${seconds}</p>
+            <p id="info"><i class="fas fa-user"></i> ${stream.viewers} <i class="fas fa-clock"></i> ${timeString}</p>
         </div>
     `;
 
